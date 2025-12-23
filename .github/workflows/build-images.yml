@@ -20,7 +20,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: thesignalforger/signalforge
+  IMAGE_NAME: thesignalforge/signalforge
 
 jobs:
   setup:
@@ -41,7 +41,7 @@ jobs:
 
   build:
     needs: setup
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, signalforge]
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.setup.outputs.matrix) }}
@@ -56,11 +56,26 @@ jobs:
         with:
           path: build
 
-      - name: Checkout ext repo
+      - name: Checkout router extension
         uses: actions/checkout@v4
         with:
-          repository: thesignalforger/signalforge-ext
-          path: ext
+          repository: thesignalforge/router
+          token: ${{ secrets.EXT_REPO_TOKEN }}
+          path: ext/router
+
+      - name: Checkout request extension
+        uses: actions/checkout@v4
+        with:
+          repository: thesignalforge/request
+          token: ${{ secrets.EXT_REPO_TOKEN }}
+          path: ext/request
+
+      - name: Checkout keyshare extension
+        uses: actions/checkout@v4
+        with:
+          repository: thesignalforge/keyshare
+          token: ${{ secrets.EXT_REPO_TOKEN }}
+          path: ext/keyshare
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -97,7 +112,7 @@ jobs:
           labels: |
             org.opencontainers.image.title=Signalforge PHP
             org.opencontainers.image.description=PHP ${{ matrix.php_version }} with Signalforge extensions
-            org.opencontainers.image.source=https://github.com/thesignalforger/signalforge-build
+            org.opencontainers.image.source=https://github.com/thesignalforge/signalforge-build
 
       - name: Output image info
         run: |
