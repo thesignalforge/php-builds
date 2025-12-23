@@ -60,21 +60,18 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: thesignalforge/router
-          token: ${{ secrets.EXT_REPO_TOKEN }}
           path: ext/router
 
       - name: Checkout request extension
         uses: actions/checkout@v4
         with:
           repository: thesignalforge/request
-          token: ${{ secrets.EXT_REPO_TOKEN }}
           path: ext/request
 
       - name: Checkout keyshare extension
         uses: actions/checkout@v4
         with:
           repository: thesignalforge/keyshare
-          token: ${{ secrets.EXT_REPO_TOKEN }}
           path: ext/keyshare
 
       - name: Set up Docker Buildx
