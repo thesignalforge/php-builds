@@ -23,21 +23,28 @@ env:
   IMAGE_NAME: thesignalforger/signalforge
 
 jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Set matrix
+        id: set-matrix
+        run: |
+          if [ "${{ github.event.inputs.php_version }}" = "all" ]; then
+            echo 'matrix={"include":[{"php_version":"8.4","php_branch":"PHP-8.4","tag":"php84"},{"php_version":"8.5","php_branch":"PHP-8.5","tag":"php85"}]}' >> $GITHUB_OUTPUT
+          elif [ "${{ github.event.inputs.php_version }}" = "8.4" ]; then
+            echo 'matrix={"include":[{"php_version":"8.4","php_branch":"PHP-8.4","tag":"php84"}]}' >> $GITHUB_OUTPUT
+          else
+            echo 'matrix={"include":[{"php_version":"8.5","php_branch":"PHP-8.5","tag":"php85"}]}' >> $GITHUB_OUTPUT
+          fi
+
   build:
+    needs: setup
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - php_version: '8.4'
-            php_branch: PHP-8.4
-            tag: php84
-          - php_version: '8.5'
-            php_branch: PHP-8.5
-            tag: php85
-
-    # Skip if specific version requested and doesn't match
-    if: ${{ github.event.inputs.php_version == 'all' || github.event.inputs.php_version == matrix.php_version }}
+      matrix: ${{ fromJSON(needs.setup.outputs.matrix) }}
 
     permissions:
       contents: read
