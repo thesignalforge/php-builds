@@ -1,0 +1,34 @@
+# Signalforge PHP CLI Image
+# CLI-only variant with terminal extension
+#
+# Usage:
+#   docker build -f images/Dockerfile.cli -t signalforge:php-cli .
+#   docker run signalforge:php-cli php -v
+#   docker run -v $(pwd):/app signalforge:php-cli php /app/script.php
+
+ARG BASE_IMAGE=signalforge:php84-test
+FROM ${BASE_IMAGE}
+
+LABEL description="Signalforge PHP CLI with terminal extension"
+
+# Copy terminal extension source
+COPY ext/terminal /tmp/terminal
+
+# Install build deps, build terminal extension, cleanup
+RUN apt-get update -qq && apt-get install -y -qq --no-install-recommends \
+        gcc make autoconf libc-dev \
+    && cd /tmp/terminal \
+    && /usr/local/bin/phpize > /dev/null \
+    && ./configure --quiet --with-php-config=/usr/local/bin/php-config --enable-terminal \
+    && make -j$(nproc) -s && make install -s \
+    && echo "extension=terminal.so" >> /usr/local/etc/php/php.ini \
+    && apt-get purge -y -qq gcc make autoconf libc-dev \
+    && apt-get autoremove -y -qq \
+    && rm -rf /var/lib/apt/lists/* /tmp/terminal
+
+# Remove FPM-specific healthcheck
+HEALTHCHECK NONE
+
+# Set entrypoint to php
+ENTRYPOINT ["php"]
+CMD ["--version"]

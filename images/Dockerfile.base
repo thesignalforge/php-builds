@@ -87,19 +87,21 @@ COPY ext/router /tmp/extensions/router
 COPY ext/request /tmp/extensions/request
 COPY ext/keyshare /tmp/extensions/keyshare
 
-# Build all extensions in parallel (quiet)
-WORKDIR /tmp/extensions
-RUN build_ext() { \
-        cd "$1" && \
-        /usr/local/bin/phpize > /dev/null && \
-        ./configure --quiet --with-php-config=/usr/local/bin/php-config --enable-$1 && \
-        make -j$(nproc) -s && \
-        make install -s; \
-    } && \
-    build_ext router & \
-    build_ext request & \
-    build_ext keyshare & \
-    wait
+# Build extensions (quiet)
+WORKDIR /tmp/extensions/router
+RUN /usr/local/bin/phpize > /dev/null \
+    && ./configure --quiet --with-php-config=/usr/local/bin/php-config --enable-signalforge_routing \
+    && make -j$(nproc) -s && make install -s
+
+WORKDIR /tmp/extensions/request
+RUN /usr/local/bin/phpize > /dev/null \
+    && ./configure --quiet --with-php-config=/usr/local/bin/php-config --enable-signalforge_http \
+    && make -j$(nproc) -s && make install -s
+
+WORKDIR /tmp/extensions/keyshare
+RUN /usr/local/bin/phpize > /dev/null \
+    && ./configure --quiet --with-php-config=/usr/local/bin/php-config --enable-keyshare \
+    && make -j$(nproc) -s && make install -s
 
 # ==============================================================================
 # Stage 2: Runtime - Minimal image with PHP and extensions
