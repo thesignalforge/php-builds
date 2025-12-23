@@ -1,13 +1,23 @@
-# Signalforge PHP 8.4 Base Image
+# Signalforge PHP Base Image
 # Multi-stage build: compile PHP from source with custom extensions
+#
+# Build args:
+#   PHP_BRANCH - PHP source branch (default: PHP-8.4)
+#
+# Usage:
+#   docker build --build-arg PHP_BRANCH=PHP-8.4 -t signalforge:php84 .
+#   docker build --build-arg PHP_BRANCH=PHP-8.5 -t signalforge:php85 .
 
 # ==============================================================================
 # Stage 1: Builder - Compile PHP and extensions from source
 # ==============================================================================
 FROM ubuntu:24.04 AS builder
 
+ARG PHP_BRANCH=PHP-8.4
+
 LABEL maintainer="Signalforge Team"
-LABEL description="PHP 8.4 builder with Signalforge extensions"
+LABEL description="PHP builder with Signalforge extensions"
+LABEL php.branch="${PHP_BRANCH}"
 
 # Avoid interactive prompts
 ENV DEBIAN_FRONTEND=noninteractive
@@ -36,9 +46,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Clone PHP from GitHub PHP-8.4 branch (latest stable)
+# Clone PHP from GitHub
 WORKDIR /tmp
-RUN git clone --depth 1 --branch PHP-8.4 https://github.com/php/php-src.git
+RUN git clone --depth 1 --branch ${PHP_BRANCH} https://github.com/php/php-src.git
 
 # Build PHP from source
 WORKDIR /tmp/php-src
@@ -102,8 +112,11 @@ RUN /usr/local/bin/phpize \
 # ==============================================================================
 FROM ubuntu:24.04 AS runtime
 
+ARG PHP_BRANCH=PHP-8.4
+
 LABEL maintainer="Signalforge Team"
-LABEL description="Signalforge PHP 8.4 Runtime with custom extensions"
+LABEL description="Signalforge PHP runtime with custom extensions"
+LABEL php.branch="${PHP_BRANCH}"
 LABEL version="0.1.0"
 
 ENV DEBIAN_FRONTEND=noninteractive

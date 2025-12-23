@@ -1,4 +1,4 @@
-.PHONY: help build up down test logs clean shell composer
+.PHONY: help build build-84 build-85 up down test logs clean shell composer
 
 # Colors for output
 GREEN := \033[0;32m
@@ -6,31 +6,44 @@ YELLOW := \033[0;33m
 RED := \033[0;31m
 NC := \033[0m # No Color
 
+# Default PHP branch
+PHP_BRANCH ?= PHP-8.4
+
 help:
-	@echo "$(GREEN)Signalforge Development Commands$(NC)"
+	@echo "$(GREEN)Signalforge Build Commands$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Build Commands:$(NC)"
+	@echo "  make build      - Build with PHP 8.4 (default)"
+	@echo "  make build-84   - Build with PHP 8.4"
+	@echo "  make build-85   - Build with PHP 8.5"
 	@echo ""
 	@echo "$(YELLOW)Docker Commands:$(NC)"
-	@echo "  make build    - Build Docker images (compiles PHP 8.4 from source)"
-	@echo "  make up       - Start all services"
-	@echo "  make down     - Stop all services"
-	@echo "  make logs     - Follow logs from app container"
-	@echo "  make shell    - Open shell in app container"
-	@echo "  make clean    - Remove containers and volumes"
+	@echo "  make up         - Start all services"
+	@echo "  make down       - Stop all services"
+	@echo "  make logs       - Follow logs from app container"
+	@echo "  make shell      - Open shell in app container"
+	@echo "  make clean      - Remove containers and volumes"
 	@echo ""
 	@echo "$(YELLOW)Development Commands:$(NC)"
-	@echo "  make test     - Run PHPUnit tests in container"
-	@echo "  make composer - Run composer commands (use: make composer CMD='install')"
+	@echo "  make test       - Run PHPUnit tests in container"
+	@echo "  make composer   - Run composer commands (use: make composer CMD='install')"
 	@echo ""
 	@echo "$(YELLOW)Information:$(NC)"
 	@echo "  make php-version  - Show PHP version in container"
 	@echo "  make php-modules  - Show loaded PHP modules"
 	@echo ""
-	@echo "$(RED)Note:$(NC) First 'make build' takes 10-15 minutes (compiling PHP from source)"
+	@echo "$(RED)Note:$(NC) First build takes 10-15 minutes (compiling PHP from source)"
 
 build:
-	@echo "$(YELLOW)Building Docker images (this may take 10-15 minutes the first time)...$(NC)"
-	docker compose build --no-cache
+	@echo "$(YELLOW)Building with PHP_BRANCH=$(PHP_BRANCH)...$(NC)"
+	PHP_BRANCH=$(PHP_BRANCH) docker compose build --no-cache
 	@echo "$(GREEN)Build complete!$(NC)"
+
+build-84:
+	@$(MAKE) build PHP_BRANCH=PHP-8.4
+
+build-85:
+	@$(MAKE) build PHP_BRANCH=PHP-8.5
 
 up:
 	@echo "$(YELLOW)Starting all services...$(NC)"

@@ -3,6 +3,8 @@ services:
     build:
       context: ..
       dockerfile: build/images/Dockerfile.base
+      args:
+        PHP_BRANCH: ${PHP_BRANCH:-PHP-8.4}
     volumes:
       - ../framework:/var/www
       - ./images/php.ini:/usr/local/etc/php/php.ini:ro
