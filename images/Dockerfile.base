@@ -22,8 +22,8 @@ LABEL php.branch="${PHP_BRANCH}"
 # Avoid interactive prompts
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install build dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# Install build dependencies (quiet)
+RUN apt-get update -qq && apt-get install -y -qq --no-install-recommends \
     git \
     gcc \
     g++ \
@@ -49,13 +49,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Clone PHP from GitHub
 WORKDIR /tmp
-RUN git clone --depth 1 --branch ${PHP_BRANCH} https://github.com/php/php-src.git
+RUN git clone --depth 1 --branch ${PHP_BRANCH} --quiet https://github.com/php/php-src.git
 
 # Build PHP from source
 WORKDIR /tmp/php-src
-RUN ./buildconf --force
+RUN ./buildconf --force > /dev/null
 
-RUN ./configure \
+RUN ./configure --quiet \
     --prefix=/usr/local \
     --with-config-file-path=/usr/local/etc/php \
     --with-config-file-scan-dir=/usr/local/etc/php/conf.d \
@@ -76,37 +76,30 @@ RUN ./configure \
     --enable-bcmath \
     --with-readline
 
-RUN make -j$(nproc)
-RUN make install
+RUN make -j$(nproc) -s
+RUN make install -s
 
 # Create extension directory
 RUN mkdir -p /usr/local/etc/php/conf.d
 
-# Copy placeholder extensions from context (context is project root)
+# Copy extensions from context
 COPY ext/router /tmp/extensions/router
 COPY ext/request /tmp/extensions/request
 COPY ext/keyshare /tmp/extensions/keyshare
 
-# Build router extension
-WORKDIR /tmp/extensions/router
-RUN /usr/local/bin/phpize \
-    && ./configure --with-php-config=/usr/local/bin/php-config --enable-router \
-    && make -j$(nproc) \
-    && make install
-
-# Build request extension
-WORKDIR /tmp/extensions/request
-RUN /usr/local/bin/phpize \
-    && ./configure --with-php-config=/usr/local/bin/php-config --enable-request \
-    && make -j$(nproc) \
-    && make install
-
-# Build keyshare extension
-WORKDIR /tmp/extensions/keyshare
-RUN /usr/local/bin/phpize \
-    && ./configure --with-php-config=/usr/local/bin/php-config --enable-keyshare \
-    && make -j$(nproc) \
-    && make install
+# Build all extensions in parallel (quiet)
+WORKDIR /tmp/extensions
+RUN build_ext() { \
+        cd "$1" && \
+        /usr/local/bin/phpize > /dev/null && \
+        ./configure --quiet --with-php-config=/usr/local/bin/php-config --enable-$1 && \
+        make -j$(nproc) -s && \
+        make install -s; \
+    } && \
+    build_ext router & \
+    build_ext request & \
+    build_ext keyshare & \
+    wait
 
 # ==============================================================================
 # Stage 2: Runtime - Minimal image with PHP and extensions
@@ -122,8 +115,8 @@ LABEL version="0.1.0"
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install runtime dependencies only
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# Install runtime dependencies only (quiet)
+RUN apt-get update -qq && apt-get install -y -qq --no-install-recommends \
     libxml2 \
     libssl3 \
     libcurl4 \
