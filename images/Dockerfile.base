@@ -1,0 +1,169 @@
+# Signalforge PHP 8.4 Base Image
+# Multi-stage build: compile PHP from source with custom extensions
+
+# ==============================================================================
+# Stage 1: Builder - Compile PHP and extensions from source
+# ==============================================================================
+FROM ubuntu:24.04 AS builder
+
+LABEL maintainer="Signalforge Team"
+LABEL description="PHP 8.4 builder with Signalforge extensions"
+
+# Avoid interactive prompts
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    gcc \
+    g++ \
+    make \
+    autoconf \
+    automake \
+    libtool \
+    pkg-config \
+    re2c \
+    bison \
+    libxml2-dev \
+    libssl-dev \
+    libcurl4-openssl-dev \
+    libzip-dev \
+    libonig-dev \
+    libsqlite3-dev \
+    libpq-dev \
+    libreadline-dev \
+    zlib1g-dev \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Clone PHP from GitHub PHP-8.4 branch (latest stable)
+WORKDIR /tmp
+RUN git clone --depth 1 --branch PHP-8.4 https://github.com/php/php-src.git
+
+# Build PHP from source
+WORKDIR /tmp/php-src
+RUN ./buildconf --force
+
+RUN ./configure \
+    --prefix=/usr/local \
+    --with-config-file-path=/usr/local/etc/php \
+    --with-config-file-scan-dir=/usr/local/etc/php/conf.d \
+    --enable-fpm \
+    --with-fpm-user=www-data \
+    --with-fpm-group=www-data \
+    --with-curl \
+    --with-openssl \
+    --with-zip \
+    --with-zlib \
+    --enable-mbstring \
+    --enable-opcache \
+    --with-pdo-mysql \
+    --with-pdo-pgsql \
+    --with-mysqli \
+    --enable-sockets \
+    --enable-pcntl \
+    --enable-bcmath \
+    --with-readline
+
+RUN make -j$(nproc)
+RUN make install
+
+# Create extension directory
+RUN mkdir -p /usr/local/etc/php/conf.d
+
+# Copy placeholder extensions from context (context is project root)
+COPY ext/router /tmp/extensions/router
+COPY ext/request /tmp/extensions/request
+COPY ext/keyshare /tmp/extensions/keyshare
+
+# Build router extension
+WORKDIR /tmp/extensions/router
+RUN /usr/local/bin/phpize \
+    && ./configure --with-php-config=/usr/local/bin/php-config --enable-router \
+    && make -j$(nproc) \
+    && make install
+
+# Build request extension
+WORKDIR /tmp/extensions/request
+RUN /usr/local/bin/phpize \
+    && ./configure --with-php-config=/usr/local/bin/php-config --enable-request \
+    && make -j$(nproc) \
+    && make install
+
+# Build keyshare extension
+WORKDIR /tmp/extensions/keyshare
+RUN /usr/local/bin/phpize \
+    && ./configure --with-php-config=/usr/local/bin/php-config --enable-keyshare \
+    && make -j$(nproc) \
+    && make install
+
+# ==============================================================================
+# Stage 2: Runtime - Minimal image with PHP and extensions
+# ==============================================================================
+FROM ubuntu:24.04 AS runtime
+
+LABEL maintainer="Signalforge Team"
+LABEL description="Signalforge PHP 8.4 Runtime with custom extensions"
+LABEL version="0.1.0"
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install runtime dependencies only
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libxml2 \
+    libssl3 \
+    libcurl4 \
+    libzip4 \
+    libonig5 \
+    libsqlite3-0 \
+    libpq5 \
+    libreadline8 \
+    zlib1g \
+    ca-certificates \
+    git \
+    unzip \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Create www-data user if not exists
+RUN groupadd -r www-data 2>/dev/null || true \
+    && useradd -r -g www-data www-data 2>/dev/null || true
+
+# Copy PHP binaries from builder
+COPY --from=builder /usr/local/bin/php /usr/local/bin/php
+COPY --from=builder /usr/local/bin/phpize /usr/local/bin/phpize
+COPY --from=builder /usr/local/bin/php-config /usr/local/bin/php-config
+COPY --from=builder /usr/local/sbin/php-fpm /usr/local/sbin/php-fpm
+
+# Copy PHP libraries and extensions
+COPY --from=builder /usr/local/lib/php /usr/local/lib/php
+COPY --from=builder /usr/local/include/php /usr/local/include/php
+
+# Create configuration directories
+RUN mkdir -p /usr/local/etc/php/conf.d \
+    && mkdir -p /var/www \
+    && mkdir -p /var/log/php-fpm \
+    && mkdir -p /var/run/php-fpm \
+    && chown -R www-data:www-data /var/www \
+    && chown -R www-data:www-data /var/log/php-fpm \
+    && chown -R www-data:www-data /var/run/php-fpm
+
+# Copy configuration files from build/images directory
+COPY build/images/php.ini /usr/local/etc/php/php.ini
+COPY build/images/php-fpm.conf /usr/local/etc/php-fpm.conf
+
+# Create symlink for easier access
+RUN ln -sf /usr/local/bin/php /usr/bin/php
+
+# Set working directory
+WORKDIR /var/www
+
+# Expose PHP-FPM port
+EXPOSE 9000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD php-fpm -t || exit 1
+
+# Run PHP-FPM in foreground
+CMD ["php-fpm", "-F", "-R"]

@@ -1,0 +1,60 @@
+# Dependencies
+framework/vendor/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Composer
+composer.phar
+
+# PHP
+*.log
+
+# Docker
+.docker/
+
+# Build artifacts
+ext/*/*.o
+ext/*/*.lo
+ext/*/*.la
+ext/*/modules/
+ext/*/.libs/
+ext/*/autom4te.cache/
+ext/*/config.guess
+ext/*/config.sub
+ext/*/configure
+ext/*/configure.ac
+ext/*/install-sh
+ext/*/ltmain.sh
+ext/*/missing
+ext/*/mkinstalldirs
+ext/*/acinclude.m4
+ext/*/aclocal.m4
+ext/*/build/
+ext/*/run-tests.php
+ext/*/Makefile
+ext/*/Makefile.fragments
+ext/*/Makefile.global
+ext/*/Makefile.objects
+ext/*/config.h
+ext/*/config.h.in
+ext/*/config.log
+ext/*/config.nice
+ext/*/config.status
+ext/*/libtool
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Storage (keep directory structure)
+framework/storage/sessions/*
+!framework/storage/sessions/.gitkeep
