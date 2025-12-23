@@ -20,7 +20,9 @@ composer.phar
 # Docker
 .docker/
 
-# Build artifacts
+# Build artifacts (local testing)
+build/
+ext/
 ext/*/*.o
 ext/*/*.lo
 ext/*/*.la
