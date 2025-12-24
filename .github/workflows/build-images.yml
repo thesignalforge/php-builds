@@ -74,6 +74,12 @@ jobs:
           repository: thesignalforge/keyshare
           path: ext/keyshare
 
+      - name: Checkout dotenv extension
+        uses: actions/checkout@v4
+        with:
+          repository: thesignalforge/dotenv
+          path: ext/dotenv
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
