@@ -25,6 +25,7 @@ Extensions are in separate public repos under `thesignalforge` org:
 | thesignalforge/router | `--enable-signalforge_routing` | signalforge_routing.so | Routing |
 | thesignalforge/request | `--enable-signalforge_http` | signalforge_http.so | HTTP handling |
 | thesignalforge/keyshare | `--enable-keyshare` | keyshare.so | Key sharing |
+| thesignalforge/dotenv | `--enable-signalforge_dotenv` | signalforge_dotenv.so | Env file loading (requires libsodium) |
 | thesignalforge/terminal | `--enable-terminal` | terminal.so | CLI only |
 
 **Important**: Extension names in config.m4 don't match repo names. Always check `PHP_ARG_ENABLE` in config.m4.
@@ -40,6 +41,7 @@ mkdir -p build/images && cp images/*.ini images/*.conf build/images/
 git clone --depth 1 https://github.com/thesignalforge/router.git ext/router
 git clone --depth 1 https://github.com/thesignalforge/request.git ext/request
 git clone --depth 1 https://github.com/thesignalforge/keyshare.git ext/keyshare
+git clone --depth 1 https://github.com/thesignalforge/dotenv.git ext/dotenv
 git clone --depth 1 https://github.com/thesignalforge/terminal.git ext/terminal
 
 # Build FPM image
@@ -105,6 +107,7 @@ Extensions are loaded in `images/php.ini`:
 ```ini
 extension=signalforge_routing.so
 extension=signalforge_http.so
+extension=signalforge_dotenv.so
 extension=keyshare.so
 ```
 

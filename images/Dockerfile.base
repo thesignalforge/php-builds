@@ -43,6 +43,7 @@ RUN apt-get update -qq && apt-get install -y -qq --no-install-recommends \
     libpq-dev \
     libreadline-dev \
     libpcre2-dev \
+    libsodium-dev \
     zlib1g-dev \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
@@ -86,6 +87,7 @@ RUN mkdir -p /usr/local/etc/php/conf.d
 COPY ext/router /tmp/extensions/router
 COPY ext/request /tmp/extensions/request
 COPY ext/keyshare /tmp/extensions/keyshare
+COPY ext/dotenv /tmp/extensions/dotenv
 
 # Build extensions (quiet)
 WORKDIR /tmp/extensions/router
@@ -101,6 +103,11 @@ RUN /usr/local/bin/phpize > /dev/null \
 WORKDIR /tmp/extensions/keyshare
 RUN /usr/local/bin/phpize > /dev/null \
     && ./configure --quiet --with-php-config=/usr/local/bin/php-config --enable-keyshare \
+    && make -j$(nproc) -s && make install -s
+
+WORKDIR /tmp/extensions/dotenv
+RUN /usr/local/bin/phpize > /dev/null \
+    && ./configure --quiet --with-php-config=/usr/local/bin/php-config --enable-signalforge_dotenv \
     && make -j$(nproc) -s && make install -s
 
 # ==============================================================================
@@ -127,6 +134,7 @@ RUN apt-get update -qq && apt-get install -y -qq --no-install-recommends \
     libsqlite3-0 \
     libpq5 \
     libreadline8 \
+    libsodium23 \
     zlib1g \
     ca-certificates \
     git \
