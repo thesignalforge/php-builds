@@ -89,6 +89,7 @@ COPY ext/request /tmp/extensions/request
 COPY ext/keyshare /tmp/extensions/keyshare
 COPY ext/dotenv /tmp/extensions/dotenv
 COPY ext/container /tmp/extensions/container
+COPY ext/http /tmp/extensions/http
 
 # Build extensions (quiet)
 WORKDIR /tmp/extensions/router
@@ -114,6 +115,11 @@ RUN /usr/local/bin/phpize > /dev/null \
 WORKDIR /tmp/extensions/container
 RUN /usr/local/bin/phpize > /dev/null \
     && ./configure --quiet --with-php-config=/usr/local/bin/php-config --enable-signalforge_container \
+    && make -j$(nproc) -s && make install -s
+
+WORKDIR /tmp/extensions/http
+RUN /usr/local/bin/phpize > /dev/null \
+    && ./configure --quiet --with-php-config=/usr/local/bin/php-config --enable-signalforge_http \
     && make -j$(nproc) -s && make install -s
 
 # ==============================================================================

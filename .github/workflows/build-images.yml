@@ -86,6 +86,12 @@ jobs:
           repository: thesignalforge/container
           path: ext/container
 
+      - name: Checkout http extension
+        uses: actions/checkout@v4
+        with:
+          repository: thesignalforge/http
+          path: ext/http
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
